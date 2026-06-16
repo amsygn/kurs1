@@ -186,9 +186,9 @@ def search_by_phone(transactions: List[Dict[str, Any]], phone_number: str = None
 
     # Выбираем предикат
     if phone_number:
-        check_phone = contains_specific_phone(phone_number)
+        predicate = contains_specific_phone(phone_number)
     else:
-        check_phone = contains_phone()
+        predicate = contains_phone()
 
     # Пайплайн обработки
     search_pipeline = compose(
