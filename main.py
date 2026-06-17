@@ -1,8 +1,10 @@
 """Главный модуль приложения."""
+import json
 import logging
+import os
+
 from pathlib import Path
 from dotenv import load_dotenv
-import os
 
 from src.views import main as views_main, events_page
 from src.reports import spending_by_weekday, get_top_cashback_categories
@@ -10,6 +12,18 @@ from src.services import simple_search, search_by_phone, search_transfers_to_ind
 from src.utils import load_transactions_from_excel
 
 load_dotenv()
+
+class ColoredFormatter(logging.Formatter):
+    COLORS = {'DEBUG': '\033[94m', 'INFO': '\033[92m', 'WARNING': '\033[93m',
+              'ERROR': '\033[91m', 'CRITICAL': '\033[95m'}
+
+    def format(self, record):
+        log_fmt = f"{self.COLORS.get(record.levelname, '')}%(message)s\033[0m"
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
+logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:', handlers=[logging.StreamHandler()])
+logging.getLogger().handlers[0].setFormatter(ColoredFormatter())
 
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
 logging.basicConfig(
@@ -62,9 +76,10 @@ def main():
     # Отчет по дням недели
     
     print("\n••• ОТЧЕТ ПО ДНЯМ НЕДЕЛИ •••")
-    
     weekday_report = spending_by_weekday(transactions)
     print(f"Отчет по дням недели сохранен в файл spending_by_weekday_report.json")
+    print("Содержимое отчета:")
+    print(json.dumps(weekday_report, ensure_ascii=False, indent=2))
 
     # Топ по кешбэку
     print("\n••• ТОП-3 КАТЕГОРИИ ПО КЕШБЭКУ •••")
