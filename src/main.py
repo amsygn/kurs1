@@ -1,19 +1,16 @@
 """Главный модуль приложения."""
 import logging
-import sys
 from pathlib import Path
 from dotenv import load_dotenv
 import os
 
-from src.views import main as views_main
-from src.reports import spending_by_category, get_top_categories, get_top_cashback_categories
+from src.views import main as views_main, events_page
+from src.reports import spending_by_weekday, get_top_cashback_categories
 from src.services import simple_search, search_by_phone, search_transfers_to_individuals
 from src.utils import load_transactions_from_excel
 
-# Загружаем переменные окружения
 load_dotenv()
 
-# Настройка логирования
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL),
@@ -43,60 +40,58 @@ def main():
     try:
         transactions = load_transactions_from_excel(data_path)
         logger.info(f"Загружено {len(transactions)} транзакций")
+        print(f"Загружено {len(transactions)} транзакций")
     except Exception as e:
         logger.error(f"Ошибка загрузки транзакций: {e}")
         print(f"Ошибка загрузки данных: {e}")
         return
 
     # Пример использования веб-страницы
-    print("\n" + "=" * 50)
-    print("ГЕНЕРАЦИЯ ДАННЫХ ДЛЯ ВЕБ-СТРАНИЦЫ")
-    print("=" * 50)
+    print("••• ГЕНЕРАЦИЯ ДАННЫХ ДЛЯ ВЕБ-СТРАНИЦЫ •••")
+    
     date_time = "2023-12-20 15:30:00"
     web_data_json = views_main(date_time)
     print(f"JSON для веб-страницы:\n{web_data_json[:500]}...")
 
-    # Пример использования отчета по категориям
-    print("\n" + "=" * 50)
-    print("ОТЧЕТ ПО КАТЕГОРИИ")
-    print("=" * 50)
-    category_report = spending_by_category(transactions, "Супермаркеты")
-    print(f"Отчет по категории 'Супермаркеты':\n{category_report}")
+    # Пример страницы событий
+    print("\n••• СТРАНИЦА СОБЫТИЙ •••")
+    
+    events_json = events_page(date_time, 'M')
+    print(f"JSON для страницы событий:\n{events_json[:500]}...")
 
-    # Топ категорий
-    print("\n" + "=" * 50)
-    print("ТОП-7 КАТЕГОРИЙ")
-    print("=" * 50)
-    top_cats = get_top_categories(transactions, 7)
-    for cat in top_cats:
-        print(f"{cat['category']}: {cat['amount']} руб.")
+    # Отчет по дням недели
+    
+    print("\n••• ОТЧЕТ ПО ДНЯМ НЕДЕЛИ •••")
+    
+    weekday_report = spending_by_weekday(transactions)
+    print(f"Отчет по дням недели сохранен в файл spending_by_weekday_report.json")
 
     # Топ по кешбэку
-    print("\n" + "=" * 50)
-    print("ТОП-3 КАТЕГОРИИ ПО КЕШБЭКУ")
-    print("=" * 50)
+    print("\n••• ТОП-3 КАТЕГОРИИ ПО КЕШБЭКУ •••")
+    
     top_cashback = get_top_cashback_categories(transactions, 3)
     for cat in top_cashback:
         print(f"{cat['category']}: {cat['cashback']} руб.")
 
     # Пример поиска
-    print("\n" + "=" * 50)
-    print("ПОИСК ТРАНЗАКЦИЙ")
-    print("=" * 50)
-
+    print("\n••• ПОИСК ТРАНЗАКЦИЙ •••")
+    
     # Простой поиск
     search_query = "магазин"
     search_results = simple_search(transactions, search_query)
-    print(f"Результаты поиска по '{search_query}': {len(search_results)} транзакций")
+    result_dict = eval(search_results)
+    print(f"Результаты поиска по '{search_query}': {len(result_dict)} транзакций")
 
     # Поиск по телефону
     phone = "+7 900 123-45-67"
     phone_results = search_by_phone(transactions, phone)
-    print(f"Результаты поиска по телефону {phone}: {len(phone_results)} транзакций")
+    phone_dict = eval(phone_results)
+    print(f"Результаты поиска по телефону {phone}: {len(phone_dict)} транзакций")
 
     # Поиск переводов физлицам
     transfers = search_transfers_to_individuals(transactions)
-    print(f"Переводы физическим лицам: {len(transfers)} транзакций")
+    transfers_dict = eval(transfers)
+    print(f"Переводы физическим лицам: {len(transfers_dict)} транзакций")
 
     logger.info("Приложение завершило работу")
 
