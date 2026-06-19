@@ -1,9 +1,49 @@
+"""Утилиты для работы с данными."""
 import logging
 from datetime import datetime, date
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import pandas as pd
+# from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+
+def parse_date(date_str: str) -> Optional[datetime]:
+    """
+    Парсинг даты из разных форматов.
+
+    Args:
+        date_str: строка с датой
+
+    Returns:
+        объект datetime или None
+    """
+    if not date_str:
+        return None
+
+    # Если это уже объект datetime
+    if isinstance(date_str, datetime):
+        return date_str
+
+    formats = [
+        '%Y-%m-%d %H:%M:%S',
+        '%d.%m.%Y %H:%M:%S',
+        '%Y-%m-%d',
+        '%d.%m.%Y',
+        '%m/%d/%Y %H:%M:%S',
+        '%m/%d/%Y',
+        '%Y%m%d',
+        '%d.%m.%y'
+    ]
+
+    for fmt in formats:
+        try:
+            return datetime.strptime(str(date_str), fmt)
+        except ValueError:
+            continue
+
+    logger.warning(f"Не удалось распарсить дату: {date_str}")
+    return None
 
 
 def load_transactions_from_excel(file_path: str) -> List[Dict[str, Any]]:
@@ -14,12 +54,18 @@ def load_transactions_from_excel(file_path: str) -> List[Dict[str, Any]]:
 
         transactions = df.to_dict('records')
 
-        # Нормализуем данные
         for trans in transactions:
+            # Нормализация даты
             if 'Дата операции' in trans:
-                if isinstance(trans['Дата операции'], (datetime, date, pd.Timestamp)):
-                    trans['Дата операции'] = trans['Дата операции'].strftime('%Y-%m-%d %H:%M:%S')
+                trans_date = trans['Дата операции']
+                if isinstance(trans_date, (datetime, date, pd.Timestamp)):
+                    trans['Дата операции'] = trans_date.strftime('%Y-%m-%d %H:%M:%S')
+                elif isinstance(trans_date, str):
+                    parsed = parse_date(trans_date)
+                    if parsed:
+                        trans['Дата операции'] = parsed.strftime('%Y-%m-%d %H:%M:%S')
 
+            # Нормализация сумм
             if 'Сумма операции' in trans:
                 trans['Сумма операции'] = float(trans['Сумма операции'])
             if 'Сумма платежа' in trans:
@@ -40,15 +86,19 @@ def filter_transactions_by_date_range(
 ) -> List[Dict[str, Any]]:
     """Фильтрация транзакций с начала месяца по указанную дату."""
     try:
-        end_dt = datetime.strptime(end_date, '%Y-%m-%d %H:%M:%S')
+        end_dt = parse_date(end_date)
+        if not end_dt:
+            logger.error(f"Неверный формат конечной даты: {end_date}")
+            return []
+
         start_dt = end_dt.replace(day=1, hour=0, minute=0, second=0)
 
         filtered = []
         for trans in transactions:
             trans_date_str = trans.get(date_column, '')
             if trans_date_str:
-                trans_date = datetime.strptime(trans_date_str, '%Y-%m-%d %H:%M:%S')
-                if start_dt <= trans_date <= end_dt:
+                trans_date = parse_date(trans_date_str)
+                if trans_date and start_dt <= trans_date <= end_dt:
                     filtered.append(trans)
 
         logger.info(f"Отфильтровано {len(filtered)} транзакций за период с {start_dt} по {end_dt}")

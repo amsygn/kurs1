@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from src.views import main as views_main, events_page
 from src.reports import spending_by_weekday, get_top_cashback_categories
 from src.services import simple_search, search_by_phone, search_transfers_to_individuals
-from src.utils import load_transactions_from_excel
+from src.utils import get_greeting, load_transactions_from_excel
 
 load_dotenv()
 
@@ -40,6 +40,9 @@ logger = logging.getLogger(__name__)
 
 def main():
     """Главная функция запуска приложения."""
+    greeting = get_greeting()
+    print(f"  {greeting}!")
+
     logger.info("Запуск приложения анализа транзакций")
 
     # Путь к файлу с данными
@@ -54,27 +57,25 @@ def main():
     try:
         transactions = load_transactions_from_excel(data_path)
         logger.info(f"Загружено {len(transactions)} транзакций")
-        print(f"Загружено {len(transactions)} транзакций")
     except Exception as e:
         logger.error(f"Ошибка загрузки транзакций: {e}")
-        print(f"Ошибка загрузки данных: {e}")
         return
 
     # Пример использования веб-страницы
-    print("••• ГЕНЕРАЦИЯ ДАННЫХ ДЛЯ ВЕБ-СТРАНИЦЫ •••")
-    
+    print("\n••• ГЕНЕРАЦИЯ ДАННЫХ ДЛЯ ВЕБ-СТРАНИЦЫ •••")
+
     date_time = "2023-12-20 15:30:00"
     web_data_json = views_main(date_time)
     print(f"JSON для веб-страницы:\n{web_data_json[:500]}...")
 
     # Пример страницы событий
     print("\n••• СТРАНИЦА СОБЫТИЙ •••")
-    
+
     events_json = events_page(date_time, 'M')
     print(f"JSON для страницы событий:\n{events_json[:500]}...")
 
     # Отчет по дням недели
-    
+
     print("\n••• ОТЧЕТ ПО ДНЯМ НЕДЕЛИ •••")
     weekday_report = spending_by_weekday(transactions)
     print(f"Отчет по дням недели сохранен в файл spending_by_weekday_report.json")
@@ -83,14 +84,14 @@ def main():
 
     # Топ по кешбэку
     print("\n••• ТОП-3 КАТЕГОРИИ ПО КЕШБЭКУ •••")
-    
+
     top_cashback = get_top_cashback_categories(transactions, 3)
     for cat in top_cashback:
         print(f"{cat['category']}: {cat['cashback']} руб.")
 
     # Пример поиска
     print("\n••• ПОИСК ТРАНЗАКЦИЙ •••")
-    
+
     # Простой поиск
     search_query = "магазин"
     search_results = simple_search(transactions, search_query)
