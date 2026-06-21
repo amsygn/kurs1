@@ -112,22 +112,16 @@ def spending_by_weekday(transactions: List[Dict[str, Any]], date: Optional[str] 
 
 
 def get_top_cashback_categories(transactions: List[Dict[str, Any]], top_n: int = 3) -> List[Dict[str, Any]]:
-    """
-    Получение топ категорий по кешбэку.
-
-    Args:
-        transactions: список транзакций
-        top_n: количество категорий
-
-    Returns:
-        список категорий с кешбэком
-    """
+    """Получение топ категорий по кешбэку."""
     categories_cashback = {}
 
     for trans in transactions:
         amount = trans.get('Сумма операции', 0)
         if amount < 0:  # Только расходы
             category = trans.get('Категория', 'Другое')
+            if pd.isna(category) or category == '' or category is None:
+                category = 'Без категории'
+
             abs_amount = abs(amount)
             cashback = abs_amount // 100  # 1 рубль на каждые 100
 

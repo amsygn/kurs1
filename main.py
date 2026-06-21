@@ -66,19 +66,18 @@ def main():
 
     date_time = "2023-12-20 15:30:00"
     web_data_json = views_main(date_time)
-    print(f"JSON для веб-страницы:\n{web_data_json[:500]}...")
+    print(f"JSON для веб-страницы:\n{web_data_json[:50]}...")  # изменить на 500 позже
 
     # Пример страницы событий
     print("\n••• СТРАНИЦА СОБЫТИЙ •••")
 
     events_json = events_page(date_time, 'M')
-    print(f"JSON для страницы событий:\n{events_json[:500]}...")
+    print(f"\nJSON для страницы событий:\n{events_json[:50]}...")   # изменить на 500 позже
 
     # Отчет по дням недели
-
     print("\n••• ОТЧЕТ ПО ДНЯМ НЕДЕЛИ •••")
     weekday_report = spending_by_weekday(transactions)
-    print(f"Отчет по дням недели сохранен в файл src\spending_by_weekday_report.json")
+    print(f"Отчет по дням недели сохранен в файл src\\spending_by_weekday_report.json")
     print("Содержимое отчета:")
     print(json.dumps(weekday_report, ensure_ascii=False, indent=2))
 
