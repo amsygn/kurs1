@@ -52,6 +52,10 @@ def load_transactions_from_excel(file_path: str) -> List[Dict[str, Any]]:
         logger.info(f"Загрузка данных из файла: {file_path}")
         df = pd.read_excel(file_path)
 
+        # Заменяем NaN на пустые строки в колонке "Категория"
+        if 'Категория' in df.columns:
+            df['Категория'] = df['Категория'].fillna('Без категории')
+
         transactions = df.to_dict('records')
 
         for trans in transactions:
@@ -64,6 +68,11 @@ def load_transactions_from_excel(file_path: str) -> List[Dict[str, Any]]:
                     parsed = parse_date(trans_date)
                     if parsed:
                         trans['Дата операции'] = parsed.strftime('%Y-%m-%d %H:%M:%S')
+
+            # Дополнительная проверка для NaN
+            if 'Категория' in trans:
+                if pd.isna(trans['Категория']):
+                    trans['Категория'] = 'Без категории'
 
             # Нормализация сумм
             if 'Сумма операции' in trans:
