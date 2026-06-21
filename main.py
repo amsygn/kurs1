@@ -11,7 +11,6 @@ from src.reports import spending_by_weekday, get_top_cashback_categories
 from src.services import simple_search, search_by_phone, search_transfers_to_individuals
 from src.utils import get_greeting, load_transactions_from_excel
 
-load_dotenv()
 
 class ColoredFormatter(logging.Formatter):
     COLORS = {'DEBUG': '\033[94m', 'INFO': '\033[92m', 'WARNING': '\033[93m',
@@ -21,6 +20,8 @@ class ColoredFormatter(logging.Formatter):
         log_fmt = f"{self.COLORS.get(record.levelname, '')}%(message)s\033[0m"
         formatter = logging.Formatter(log_fmt)
         return formatter.format(record)
+
+load_dotenv()
 
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:', handlers=[logging.StreamHandler()])
 logging.getLogger().handlers[0].setFormatter(ColoredFormatter())
@@ -45,7 +46,6 @@ def main():
 
     logger.info("Запуск приложения анализа транзакций")
 
-    # Путь к файлу с данными
     data_path = os.getenv('DATA_PATH', 'data/operations.xlsx')
 
     if not Path(data_path).exists():
@@ -56,7 +56,6 @@ def main():
     # Загружаем транзакции
     try:
         transactions = load_transactions_from_excel(data_path)
-        logger.info(f"Загружено {len(transactions)} транзакций")
     except Exception as e:
         logger.error(f"Ошибка загрузки транзакций: {e}")
         return
