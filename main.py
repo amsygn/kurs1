@@ -78,7 +78,7 @@ def main():
 
     print("\n••• ОТЧЕТ ПО ДНЯМ НЕДЕЛИ •••")
     weekday_report = spending_by_weekday(transactions)
-    print(f"Отчет по дням недели сохранен в файл spending_by_weekday_report.json")
+    print(f"Отчет по дням недели сохранен в файл src\spending_by_weekday_report.json")
     print("Содержимое отчета:")
     print(json.dumps(weekday_report, ensure_ascii=False, indent=2))
 

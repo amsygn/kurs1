@@ -40,7 +40,7 @@ def report_decorator(filename: str = None):
     return decorator
 
 
-@report_decorator("spending_by_weekday_report.json")
+@report_decorator("src\spending_by_weekday_report.json")
 def spending_by_weekday(transactions: List[Dict[str, Any]], date: Optional[str] = None) -> Dict[str, Any]:
     """
     Отчет по средним тратам по дням недели за последние 3 месяца.
