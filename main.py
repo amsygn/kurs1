@@ -53,30 +53,31 @@ def main():
         print(f"Ошибка: Файл данных не найден: {data_path}")
         return
 
-    # Загружаем транзакции
     try:
         transactions = load_transactions_from_excel(data_path)
+        print(f"✅ Загружено {len(transactions)} транзакций\n")
     except Exception as e:
         logger.error(f"Ошибка загрузки транзакций: {e}")
+        print(f"\n❌ Ошибка загрузки данных: {e}")
         return
 
-    # Пример использования веб-страницы
+    # ✅ Передаем транзакции в функции
     print("\n••• ГЕНЕРАЦИЯ ДАННЫХ ДЛЯ ВЕБ-СТРАНИЦЫ •••")
 
     date_time = "2023-12-20 15:30:00"
-    web_data_json = views_main(date_time)
-    print(f"JSON для веб-страницы:\n{web_data_json[:50]}...")  # изменить на 500 позже
+    web_data_json = views_main(transactions, date_time)  # ← передаем транзакции
+    print(f"JSON для веб-страницы:\n{web_data_json[:50]}...")
 
     # Пример страницы событий
     print("\n••• СТРАНИЦА СОБЫТИЙ •••")
 
-    events_json = events_page(date_time, 'M')
-    print(f"\nJSON для страницы событий:\n{events_json[:50]}...")   # изменить на 500 позже
+    events_json = events_page(transactions, date_time, 'M')  # ← передаем транзакции
+    print(f"\nJSON для страницы событий:\n{events_json[:50]}...")
 
     # Отчет по дням недели
     print("\n••• ОТЧЕТ ПО ДНЯМ НЕДЕЛИ •••")
     weekday_report = spending_by_weekday(transactions)
-    print(f"Отчет по дням недели сохранен в файл src\\spending_by_weekday_report.json")
+    print(f"Отчет по дням недели сохранен в файл src/spending_by_weekday_report.json")
     print("Содержимое отчета:")
     print(json.dumps(weekday_report, ensure_ascii=False, indent=2))
 
