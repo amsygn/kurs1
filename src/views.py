@@ -26,7 +26,7 @@ def load_user_settings() -> Dict[str, Any]:
             return settings
     except Exception as e:
         logger.error(f"Ошибка загрузки настроек: {e}")
-        return {"user_currencies": ["USD", "EUR"], "user_stocks": []}
+        return {"user_currencies": ["CNY", "EUR", "USD"], "user_stocks": ["GAZP", "LKOH", "OZON", "SBER", "YDEX"]}
 
 
 def get_currency_rates(currencies: List[str]) -> List[Dict[str, Any]]:
@@ -71,20 +71,72 @@ def get_stock_prices(stocks: List[str]) -> List[Dict[str, Any]]:
             url = f"https://iss.moex.com/iss/engines/stock/markets/shares/securities/{stock}.json"
             response = requests.get(url)
 
+            price = 0.0
+
             if response.status_code == 200:
                 data = response.json()
+
+                # Проверяем наличие данных в разных местах
+                # Вариант 1: marketdata
                 market_data = data.get('marketdata', {}).get('data', [])
                 if market_data and len(market_data) > 0:
-                    last_price = market_data[0][3]
-                    prices.append({
-                        "stock": stock,
-                        "price": round(float(last_price), 2)
-                    })
-                else:
-                    prices.append({"stock": stock, "price": 0.0})
-            else:
-                fallback_prices = {"AAPL": 175.50, "GOOGL": 135.20, "MSFT": 380.30, "AMZN": 145.80, "TSLA": 240.50}
-                prices.append({"stock": stock, "price": fallback_prices.get(stock, 100.0)})
+                    # LAST цена обычно на позиции 3
+                    if len(market_data[0]) > 3:
+                        last_price = market_data[0][3]
+                        if last_price is not None:
+                            price = float(last_price)
+
+                # Вариант 2: Если не нашли в marketdata, пробуем securities
+                if price == 0.0:
+                    securities_data = data.get('securities', {}).get('data', [])
+                    if securities_data and len(securities_data) > 0:
+                        # PREVPRICE или LAST может быть в разных позициях
+                        # Ищем по колонкам
+                        columns = data.get('securities', {}).get('columns', [])
+                        if 'PREVPRICE' in columns:
+                            idx = columns.index('PREVPRICE')
+                            if len(securities_data[0]) > idx:
+                                prev_price = securities_data[0][idx]
+                                if prev_price is not None:
+                                    price = float(prev_price)
+                        elif 'LAST' in columns:
+                            idx = columns.index('LAST')
+                            if len(securities_data[0]) > idx:
+                                last_price = securities_data[0][idx]
+                                if last_price is not None:
+                                    price = float(last_price)
+
+                # Если все еще 0, пробуем получить из boardgroup
+                if price == 0.0:
+                    boardgroup_data = data.get('boardgroup', {}).get('data', [])
+                    if boardgroup_data and len(boardgroup_data) > 0:
+                        columns = data.get('boardgroup', {}).get('columns', [])
+                        if 'PREVPRICE' in columns:
+                            idx = columns.index('PREVPRICE')
+                            if len(boardgroup_data[0]) > idx:
+                                prev_price = boardgroup_data[0][idx]
+                                if prev_price is not None:
+                                    price = float(prev_price)
+
+                # Если все еще 0, пробуем получить из marketdata с другими индексами
+                if price == 0.0:
+                    market_data = data.get('marketdata', {}).get('data', [])
+                    if market_data and len(market_data) > 0:
+                        columns = data.get('marketdata', {}).get('columns', [])
+                        price_columns = ['LAST', 'PREVPRICE', 'CLOSE', 'CURRENTPRICE']
+                        for col_name in price_columns:
+                            if col_name in columns:
+                                idx = columns.index(col_name)
+                                if len(market_data[0]) > idx:
+                                    val = market_data[0][idx]
+                                    if val is not None:
+                                        price = float(val)
+                                        break
+
+            prices.append({
+                "stock": stock,
+                "price": round(price, 2)
+            })
 
     except Exception as e:
         logger.error(f"Ошибка получения цен акций: {e}")

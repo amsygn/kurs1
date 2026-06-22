@@ -61,18 +61,39 @@ def main():
         print(f"\n❌ Ошибка загрузки данных: {e}")
         return
 
-    # ✅ Передаем транзакции в функции
+    # Генерация данных для веб-страницы
     print("\n••• ГЕНЕРАЦИЯ ДАННЫХ ДЛЯ ВЕБ-СТРАНИЦЫ •••")
 
     date_time = "2023-12-20 15:30:00"
-    web_data_json = views_main(transactions, date_time)  # ← передаем транзакции
-    print(f"JSON для веб-страницы:\n{web_data_json[:50]}...")
+    web_data_json = views_main(transactions, date_time)
 
-    # Пример страницы событий
+    try:
+        web_data = json.loads(web_data_json)
+
+        # Курсы валют
+        if 'currency_rates' in web_data and web_data['currency_rates']:
+            print("\n КУРСЫ ВАЛЮТ:")
+            for rate in web_data['currency_rates']:
+                print(f"  {rate['currency']}: {rate['rate']:.4f} руб.")
+        else:
+            print("\n КУРСЫ ВАЛЮТ: данные не получены")
+
+        # Цены акций
+        if 'stock_prices' in web_data and web_data['stock_prices']:
+            print("\n ЦЕНЫ АКЦИЙ:")
+            for stock in web_data['stock_prices']:
+                print(f"  {stock['stock']}: ${stock['price']:.2f}")
+        else:
+            print("\n ЦЕНЫ АКЦИЙ: данные не получены")
+
+    except json.JSONDecodeError as e:
+        print(f"Ошибка парсинга JSON: {e}")
+        print(f"JSON для веб-страницы:\n{web_data_json[:500]}...")
+
+    # Страница событий
     print("\n••• СТРАНИЦА СОБЫТИЙ •••")
-
-    events_json = events_page(transactions, date_time, 'M')  # ← передаем транзакции
-    print(f"\nJSON для страницы событий:\n{events_json[:50]}...")
+    events_json = events_page(transactions, date_time, 'M')
+    print(f"\nJSON для страницы событий:\n{events_json[:500]}...")
 
     # Отчет по дням недели
     print("\n••• ОТЧЕТ ПО ДНЯМ НЕДЕЛИ •••")
