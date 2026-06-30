@@ -21,7 +21,13 @@ class ColoredFormatter(logging.Formatter):
         formatter = logging.Formatter(log_fmt)
         return formatter.format(record)
 
+
 load_dotenv()
+
+# Отключаем логи от сторонних библиотек
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("charset_normalizer").setLevel(logging.WARNING)
 
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:', handlers=[logging.StreamHandler()])
 logging.getLogger().handlers[0].setFormatter(ColoredFormatter())
@@ -56,6 +62,42 @@ def main():
     try:
         transactions = load_transactions_from_excel(data_path)
         print(f"✅ Загружено {len(transactions)} транзакций\n")
+
+        # ===== ДИАГНОСТИКА =====
+        print("=" * 60)
+        print("ДИАГНОСТИКА ДАННЫХ")
+        print("=" * 60)
+
+        # 1. Проверяем структуру первой транзакции
+        if transactions:
+            print("\n1. СТРУКТУРА ПЕРВОЙ ТРАНЗАКЦИИ:")
+            for key, value in transactions[0].items():
+                print(f"   {key}: {value}")
+
+        # 2. Проверяем даты
+        print("\n2. ПРОВЕРКА ДАТ:")
+        dates = [t.get('Дата операции', '') for t in transactions if t.get('Дата операции')]
+        print(f"   Всего транзакций с датами: {len(dates)}")
+        if dates:
+            print(f"   Первая дата: {dates[0]}")
+            print(f"   Последняя дата: {dates[-1]}")
+            # Проверяем декабрь 2023
+            dec_dates = [d for d in dates if '2020-12' in d or '12.2020' in d or '12/2020' in d]
+            print(f"   Транзакций за декабрь 2020: {len(dec_dates)}")
+            if dec_dates:
+                print(f"   Примеры дат за декабрь: {dec_dates[:3]}")
+            else:
+                print("   ⚠️ Нет транзакций за декабрь 2020!")
+
+        # 3. Проверяем категории
+        print("\n3. ПРОВЕРКА КАТЕГОРИЙ:")
+        categories = set(t.get('Категория', '') for t in transactions if t.get('Категория'))
+        print(f"   Уникальных категорий: {len(categories)}")
+        print(f"   Примеры категорий: {list(categories)[:10]}")
+
+        print("=" * 60)
+        # ===== КОНЕЦ ДИАГНОСТИКИ =====
+
     except Exception as e:
         logger.error(f"Ошибка загрузки транзакций: {e}")
         print(f"\n❌ Ошибка загрузки данных: {e}")
@@ -64,27 +106,40 @@ def main():
     # Генерация данных для веб-страницы
     print("\n••• ГЕНЕРАЦИЯ ДАННЫХ ДЛЯ ВЕБ-СТРАНИЦЫ •••")
 
-    date_time = "2023-12-20 15:30:00"
+    date_time = "2020-12-20 15:30:00"
     web_data_json = views_main(transactions, date_time)
 
+    # ✅ Сначала парсим JSON
     try:
         web_data = json.loads(web_data_json)
 
+        # Информация по картам
+        if 'cards' in web_data and web_data['cards']:
+            print("\n💳 ИНФОРМАЦИЯ ПО КАРТАМ:")
+            for card in web_data['cards']:
+                print(f"\n  Карта ****{card['last_digits']}:")
+                print(f"    Расходы: {card['total_expenses']:,} руб.")
+                print(f"    Кешбэк: {card['cashback']} руб.")
+                if card.get('top_transactions'):
+                    print("    Топ-5 транзакций:")
+                    for i, trans in enumerate(card['top_transactions'][:5], 1):
+                        print(f"      {i}. {trans['date']} - {trans['description']}: {trans['amount']:,} руб. ({trans['category']})")
+
         # Курсы валют
         if 'currency_rates' in web_data and web_data['currency_rates']:
-            print("\n КУРСЫ ВАЛЮТ:")
+            print("\n💵 КУРСЫ ВАЛЮТ:")
             for rate in web_data['currency_rates']:
                 print(f"  {rate['currency']}: {rate['rate']:.4f} руб.")
         else:
-            print("\n КУРСЫ ВАЛЮТ: данные не получены")
+            print("\n💵 КУРСЫ ВАЛЮТ: данные не получены")
 
         # Цены акций
         if 'stock_prices' in web_data and web_data['stock_prices']:
-            print("\n ЦЕНЫ АКЦИЙ:")
+            print("\n📈 ЦЕНЫ АКЦИЙ:")
             for stock in web_data['stock_prices']:
                 print(f"  {stock['stock']}: ${stock['price']:.2f}")
         else:
-            print("\n ЦЕНЫ АКЦИЙ: данные не получены")
+            print("\n📈 ЦЕНЫ АКЦИЙ: данные не получены")
 
     except json.JSONDecodeError as e:
         print(f"Ошибка парсинга JSON: {e}")
@@ -93,7 +148,30 @@ def main():
     # Страница событий
     print("\n••• СТРАНИЦА СОБЫТИЙ •••")
     events_json = events_page(transactions, date_time, 'M')
-    print(f"\nJSON для страницы событий:\n{events_json[:500]}...")
+
+    try:
+        events_data = json.loads(events_json)
+
+        if 'expenses' in events_data:
+            print(f"\n📊 РАСХОДЫ:")
+            print(f"  Всего: {events_data['expenses'].get('total_amount', 0):,} руб.")
+            print("  Основные категории:")
+            for cat in events_data['expenses'].get('main', [])[:7]:
+                print(f"    {cat['category']}: {cat['amount']:,} руб.")
+            if events_data['expenses'].get('transfers_and_cash'):
+                print("  Переводы и наличные:")
+                for cat in events_data['expenses']['transfers_and_cash']:
+                    print(f"    {cat['category']}: {cat['amount']:,} руб.")
+
+        if 'income' in events_data:
+            print(f"\n💰 ПОСТУПЛЕНИЯ:")
+            print(f"  Всего: {events_data['income'].get('total_amount', 0):,} руб.")
+            print("  Основные категории:")
+            for cat in events_data['income'].get('main', [])[:7]:
+                print(f"    {cat['category']}: {cat['amount']:,} руб.")
+
+    except json.JSONDecodeError:
+        print(f"JSON для страницы событий:\n{events_json[:500]}...")
 
     # Отчет по дням недели
     print("\n••• ОТЧЕТ ПО ДНЯМ НЕДЕЛИ •••")
@@ -104,7 +182,6 @@ def main():
 
     # Топ по кешбэку
     print("\n••• ТОП-3 КАТЕГОРИИ ПО КЕШБЭКУ •••")
-
     top_cashback = get_top_cashback_categories(transactions, 3)
     for cat in top_cashback:
         print(f"{cat['category']}: {cat['cashback']} руб.")
@@ -115,19 +192,28 @@ def main():
     # Простой поиск
     search_query = "магазин"
     search_results = simple_search(transactions, search_query)
-    result_dict = eval(search_results)
-    print(f"Результаты поиска по '{search_query}': {len(result_dict)} транзакций")
+    try:
+        result_dict = json.loads(search_results) if isinstance(search_results, str) else search_results
+        print(f"Результаты поиска по '{search_query}': {len(result_dict)} транзакций")
+    except:
+        print(f"Результаты поиска по '{search_query}': {search_results[:200]}...")
 
     # Поиск по телефону
     phone = "+7 900 123-45-67"
     phone_results = search_by_phone(transactions, phone)
-    phone_dict = eval(phone_results)
-    print(f"Результаты поиска по телефону {phone}: {len(phone_dict)} транзакций")
+    try:
+        phone_dict = json.loads(phone_results) if isinstance(phone_results, str) else phone_results
+        print(f"Результаты поиска по телефону {phone}: {len(phone_dict)} транзакций")
+    except:
+        print(f"Результаты поиска по телефону {phone}: {phone_results[:200]}...")
 
     # Поиск переводов физлицам
     transfers = search_transfers_to_individuals(transactions)
-    transfers_dict = eval(transfers)
-    print(f"Переводы физическим лицам: {len(transfers_dict)} транзакций")
+    try:
+        transfers_dict = json.loads(transfers) if isinstance(transfers, str) else transfers
+        print(f"Переводы физическим лицам: {len(transfers_dict)} транзакций")
+    except:
+        print(f"Переводы физическим лицам: {transfers[:200]}...")
 
     logger.info("Приложение завершило работу")
 
