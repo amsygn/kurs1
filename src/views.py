@@ -90,8 +90,6 @@ def get_stock_prices(stocks: List[str]) -> List[Dict[str, Any]]:
                 if price == 0.0:
                     securities_data = data.get('securities', {}).get('data', [])
                     if securities_data and len(securities_data) > 0:
-                        # PREVPRICE или LAST может быть в разных позициях
-                        # Ищем по колонкам
                         columns = data.get('securities', {}).get('columns', [])
                         if 'PREVPRICE' in columns:
                             idx = columns.index('PREVPRICE')
