@@ -153,7 +153,7 @@ def main():
         events_data = json.loads(events_json)
 
         if 'expenses' in events_data:
-            print(f"\n📊 РАСХОДЫ:")
+            print("\nРАСХОДЫ:")
             print(f"  Всего: {events_data['expenses'].get('total_amount', 0):,} руб.")
             print("  Основные категории:")
             for cat in events_data['expenses'].get('main', [])[:7]:
@@ -164,7 +164,7 @@ def main():
                     print(f"    {cat['category']}: {cat['amount']:,} руб.")
 
         if 'income' in events_data:
-            print(f"\n💰 ПОСТУПЛЕНИЯ:")
+            print("\nПОСТУПЛЕНИЯ:")
             print(f"  Всего: {events_data['income'].get('total_amount', 0):,} руб.")
             print("  Основные категории:")
             for cat in events_data['income'].get('main', [])[:7]:
@@ -176,7 +176,7 @@ def main():
     # Отчет по дням недели
     print("\n••• ОТЧЕТ ПО ДНЯМ НЕДЕЛИ •••")
     weekday_report = spending_by_weekday(transactions)
-    print(f"Отчет по дням недели сохранен в файл src/spending_by_weekday_report.json")
+    print("Отчет по дням недели сохранен в файл src/spending_by_weekday_report.json")
     print("Содержимое отчета:")
     print(json.dumps(weekday_report, ensure_ascii=False, indent=2))
 
@@ -195,7 +195,7 @@ def main():
     try:
         result_dict = json.loads(search_results) if isinstance(search_results, str) else search_results
         print(f"Результаты поиска по '{search_query}': {len(result_dict)} транзакций")
-    except:
+    except (json.JSONDecodeError, TypeError, ValueError):
         print(f"Результаты поиска по '{search_query}': {search_results[:200]}...")
 
     # Поиск по телефону
@@ -204,7 +204,7 @@ def main():
     try:
         phone_dict = json.loads(phone_results) if isinstance(phone_results, str) else phone_results
         print(f"Результаты поиска по телефону {phone}: {len(phone_dict)} транзакций")
-    except:
+    except (json.JSONDecodeError, TypeError, ValueError):
         print(f"Результаты поиска по телефону {phone}: {phone_results[:200]}...")
 
     # Поиск переводов физлицам
@@ -212,7 +212,7 @@ def main():
     try:
         transfers_dict = json.loads(transfers) if isinstance(transfers, str) else transfers
         print(f"Переводы физическим лицам: {len(transfers_dict)} транзакций")
-    except:
+    except (json.JSONDecodeError, TypeError, ValueError):
         print(f"Переводы физическим лицам: {transfers[:200]}...")
 
     logger.info("Приложение завершило работу")

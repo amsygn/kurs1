@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 from xml.etree.ElementTree import fromstring
 
 from src.utils import (
-    load_transactions_from_excel,
     filter_transactions_by_date_range,
     get_greeting,
     format_date

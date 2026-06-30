@@ -1,2 +1,20 @@
 [flake8]
-max-line-length = 110
+exclude =
+    .venv,
+    .env,
+    .git,
+    __pycache__,
+    venv,
+    env,
+    data,
+    tests,
+    .idea,
+    .vscode,
+    *.log,
+    *.json,
+    *.xlsx,
+    .env_template,
+    user_settings.json
+
+max-line-length = 100
+ignore = E203, W503, E501

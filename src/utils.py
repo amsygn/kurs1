@@ -137,5 +137,6 @@ def format_date(date_str: str, from_format: str = '%Y-%m-%d %H:%M:%S', to_format
     try:
         dt = datetime.strptime(date_str, from_format)
         return dt.strftime(to_format)
-    except:
+    except (ValueError, TypeError) as e:
+        logger.warning(f"Ошибка форматирования даты '{date_str}': {e}")
         return date_str

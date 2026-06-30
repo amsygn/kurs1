@@ -13,8 +13,8 @@ def contains_string(query: str) -> Callable:
     """Создает предикат для поиска строки в описании или категории."""
     query_lower = query.lower()
     return lambda trans: (
-            query_lower in trans.get('Описание', '').lower() or
-            query_lower in trans.get('Категория', '').lower()
+        query_lower in trans.get('Описание', '').lower()
+        or query_lower in trans.get('Категория', '').lower()
     )
 
 
@@ -156,7 +156,7 @@ def search_by_phone(transactions: List[Dict[str, Any]], phone_number: str = None
     Returns:
         JSON-строка с найденными транзакциями
     """
-    logger.info(f"Поиск по телефонам" + (f": '{phone_number}'" if phone_number else ""))
+    logger.info("Поиск по телефонам" + (f": '{phone_number}'" if phone_number else ""))
 
     def normalize_phone(phone: str) -> str:
         """Нормализация телефонного номера."""
