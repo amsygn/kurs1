@@ -3,21 +3,12 @@ import logging
 from datetime import datetime, date
 from typing import List, Dict, Any, Optional
 import pandas as pd
-# from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 
 def parse_date(date_str: str) -> Optional[datetime]:
-    """
-    Парсинг даты из разных форматов.
-
-    Args:
-        date_str: строка с датой
-
-    Returns:
-        объект datetime или None
-    """
+    """Парсинг даты из разных форматов."""
     if not date_str:
         return None
 

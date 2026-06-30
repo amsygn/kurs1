@@ -76,43 +76,17 @@ def extract_phone_from_description(trans: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def filter_transactions(transactions: List[Dict[str, Any]], predicate: Callable) -> List[Dict[str, Any]]:
-    """
-    Фильтрует транзакции с использованием предиката.
-
-    Args:
-        transactions: список транзакций
-        predicate: функция-предикат для фильтрации
-
-    Returns:
-        отфильтрованный список
-    """
+    """Фильтрует транзакции с использованием предиката."""
     return list(filter(predicate, transactions))
 
 
 def map_transactions(transactions: List[Dict[str, Any]], transformer: Callable) -> List[Dict[str, Any]]:
-    """
-    Преобразует транзакции с использованием функции-трансформера.
-
-    Args:
-        transactions: список транзакций
-        transformer: функция для преобразования
-
-    Returns:
-        преобразованный список
-    """
+    """Преобразует транзакции с использованием функции-трансформера."""
     return list(map(transformer, transactions))
 
 
 def compose(*functions: Callable) -> Callable:
-    """
-    Композиция функций.
-
-    Args:
-        functions: список функций для последовательного применения
-
-    Returns:
-        композированная функция
-    """
+    """Композиция функций."""
 
     def compose_two(f: Callable, g: Callable) -> Callable:
         return lambda x: f(g(x))
@@ -121,16 +95,7 @@ def compose(*functions: Callable) -> Callable:
 
 
 def simple_search(transactions: List[Dict[str, Any]], query: str) -> str:
-    """
-    Простой поиск по описанию транзакций с использованием функционального подхода.
-
-    Args:
-        transactions: список транзакций
-        query: поисковый запрос
-
-    Returns:
-        JSON-строка с найденными транзакциями
-    """
+    """Простой поиск по описанию транзакций с использованием функционального подхода."""
     logger.info(f"Поиск по запросу: '{query}'")
 
     # Создаем пайплайн обработки
@@ -146,16 +111,7 @@ def simple_search(transactions: List[Dict[str, Any]], query: str) -> str:
 
 
 def search_by_phone(transactions: List[Dict[str, Any]], phone_number: str = None) -> str:
-    """
-    Поиск транзакций по телефонным номерам.
-
-    Args:
-        transactions: список транзакций
-        phone_number: опциональный номер телефона для конкретного поиска
-
-    Returns:
-        JSON-строка с найденными транзакциями
-    """
+    """Поиск транзакций по телефонным номерам."""
     logger.info("Поиск по телефонам" + (f": '{phone_number}'" if phone_number else ""))
 
     def normalize_phone(phone: str) -> str:
@@ -184,13 +140,11 @@ def search_by_phone(transactions: List[Dict[str, Any]], phone_number: str = None
 
         return check_phone
 
-    # Выбираем предикат
     if phone_number:
         predicate = contains_specific_phone(phone_number)
     else:
         predicate = contains_phone()
 
-    # Пайплайн обработки
     search_pipeline = compose(
         lambda x: filter_transactions(x, predicate),
         lambda x: map_transactions(x, extract_phone_from_description)
@@ -203,15 +157,7 @@ def search_by_phone(transactions: List[Dict[str, Any]], phone_number: str = None
 
 
 def search_transfers_to_individuals(transactions: List[Dict[str, Any]]) -> str:
-    """
-    Поиск переводов физическим лицам.
-
-    Args:
-        transactions: список транзакций
-
-    Returns:
-        JSON-строка с переводами физическим лицам
-    """
+    """Поиск переводов физическим лицам."""
     logger.info("Поиск переводов физическим лицам")
 
     def extract_recipient(trans: Dict[str, Any]) -> Dict[str, Any]:
@@ -220,7 +166,6 @@ def search_transfers_to_individuals(transactions: List[Dict[str, Any]]) -> str:
         result['amount'] = abs(result['amount'])
         result['recipient'] = trans.get('Контрагент', '')
 
-        # Пытаемся извлечь имя из описания
         name_pattern = re.compile(r'([А-Я][а-я]+\s[А-Я]\.)')
         names = name_pattern.findall(trans.get('Описание', ''))
         if names:
@@ -228,7 +173,6 @@ def search_transfers_to_individuals(transactions: List[Dict[str, Any]]) -> str:
 
         return result
 
-    # Пайплайн обработки
     search_pipeline = compose(
         lambda x: filter_transactions(x, is_transfer_to_individual()),
         lambda x: map_transactions(x, extract_recipient)
@@ -241,16 +185,7 @@ def search_transfers_to_individuals(transactions: List[Dict[str, Any]]) -> str:
 
 
 def search_by_category(transactions: List[Dict[str, Any]], category: str) -> str:
-    """
-    Поиск транзакций по категории.
-
-    Args:
-        transactions: список транзакций
-        category: категория для поиска
-
-    Returns:
-        JSON-строка с найденными транзакциями
-    """
+    """Поиск транзакций по категории."""
     logger.info(f"Поиск по категории: '{category}'")
 
     def contains_category(cat: str) -> Callable:
