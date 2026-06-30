@@ -11,12 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def report_decorator(filename: str = None):
-    """
-    Декоратор для сохранения результата функции в JSON-файл.
-
-    Args:
-        filename: имя файла для сохранения (если None, генерируется автоматически)
-    """
+    """Декоратор для сохранения результата функции в JSON-файл."""
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -42,12 +37,7 @@ def report_decorator(filename: str = None):
 
 @report_decorator("src/spending_by_weekday_report.json")
 def spending_by_weekday(transactions: List[Dict[str, Any]], date: Optional[str] = None) -> Dict[str, Any]:
-    """
-    Отчет по средним тратам по дням недели за последние 3 месяца.
-
-    Returns:
-        словарь с отчетом по дням недели
-    """
+    """Отчет по средним тратам по дням недели за последние 3 месяца."""
     if date is None:
         end_date = datetime.now()
     else:
@@ -57,10 +47,8 @@ def spending_by_weekday(transactions: List[Dict[str, Any]], date: Optional[str] 
 
     logger.info(f"Формирование отчета по дням недели за период {start_date} - {end_date}")
 
-    # Преобразуем в DataFrame для удобства
     df = pd.DataFrame(transactions)
 
-    # Проверяем наличие данных
     if df.empty:
         logger.warning("Нет транзакций для анализа")
         return {
@@ -76,7 +64,6 @@ def spending_by_weekday(transactions: List[Dict[str, Any]], date: Optional[str] 
     mask = (df['Дата операции'] >= start_date) & (df['Дата операции'] <= end_date) & (df['Сумма операции'] < 0)
     filtered_df = df[mask].copy()
 
-    # ✅ Возвращаем словарь вместо DataFrame
     if filtered_df.empty:
         logger.warning("Нет данных за указанный период")
         return {
@@ -87,7 +74,6 @@ def spending_by_weekday(transactions: List[Dict[str, Any]], date: Optional[str] 
             'average_spending_by_weekday': []
         }
 
-    # Добавляем день недели
     filtered_df['weekday'] = filtered_df['Дата операции'].dt.day_name(locale='ru_RU')
     filtered_df['amount'] = filtered_df['Сумма операции'].abs()
 
@@ -95,13 +81,12 @@ def spending_by_weekday(transactions: List[Dict[str, Any]], date: Optional[str] 
     weekday_order = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье']
     spending_by_day = filtered_df.groupby('weekday')['amount'].mean().round(2)
 
-    # Приводим к нужному порядку
     result_df = pd.DataFrame({
         'weekday': weekday_order,
         'average_spending': [spending_by_day.get(day, 0) for day in weekday_order]
     })
 
-    # ✅ Возвращаем JSON-сериализуемый словарь
+    # Возвращаем JSON-сериализуемый словарь
     return {
         'period': {
             'start': start_date.strftime('%Y-%m-%d'),
@@ -128,7 +113,6 @@ def get_top_cashback_categories(transactions: List[Dict[str, Any]], top_n: int =
             if cashback > 0:
                 categories_cashback[category] = categories_cashback.get(category, 0) + cashback
 
-    # Сортируем по кешбэку
     sorted_cats = sorted(categories_cashback.items(), key=lambda x: x[1], reverse=True)
     top = sorted_cats[:top_n]
 
