@@ -61,42 +61,7 @@ def main():
 
     try:
         transactions = load_transactions_from_excel(data_path)
-        print(f"✅ Загружено {len(transactions)} транзакций\n")
-
-        # ===== ДИАГНОСТИКА =====
-        print("=" * 60)
-        print("ДИАГНОСТИКА ДАННЫХ")
-        print("=" * 60)
-
-        # 1. Проверяем структуру первой транзакции
-        if transactions:
-            print("\n1. СТРУКТУРА ПЕРВОЙ ТРАНЗАКЦИИ:")
-            for key, value in transactions[0].items():
-                print(f"   {key}: {value}")
-
-        # 2. Проверяем даты
-        print("\n2. ПРОВЕРКА ДАТ:")
-        dates = [t.get('Дата операции', '') for t in transactions if t.get('Дата операции')]
-        print(f"   Всего транзакций с датами: {len(dates)}")
-        if dates:
-            print(f"   Первая дата: {dates[0]}")
-            print(f"   Последняя дата: {dates[-1]}")
-            # Проверяем декабрь 2023
-            dec_dates = [d for d in dates if '2020-12' in d or '12.2020' in d or '12/2020' in d]
-            print(f"   Транзакций за декабрь 2020: {len(dec_dates)}")
-            if dec_dates:
-                print(f"   Примеры дат за декабрь: {dec_dates[:3]}")
-            else:
-                print("   ⚠️ Нет транзакций за декабрь 2020!")
-
-        # 3. Проверяем категории
-        print("\n3. ПРОВЕРКА КАТЕГОРИЙ:")
-        categories = set(t.get('Категория', '') for t in transactions if t.get('Категория'))
-        print(f"   Уникальных категорий: {len(categories)}")
-        print(f"   Примеры категорий: {list(categories)[:10]}")
-
-        print("=" * 60)
-        # ===== КОНЕЦ ДИАГНОСТИКИ =====
+        print(f"Загружено {len(transactions)} транзакций\n")
 
     except Exception as e:
         logger.error(f"Ошибка загрузки транзакций: {e}")
@@ -109,13 +74,12 @@ def main():
     date_time = "2020-12-20 15:30:00"
     web_data_json = views_main(transactions, date_time)
 
-    # ✅ Сначала парсим JSON
     try:
         web_data = json.loads(web_data_json)
 
-        # Информация по картам
+        # Информация по картам с топ-5 транзакциями
         if 'cards' in web_data and web_data['cards']:
-            print("\n💳 ИНФОРМАЦИЯ ПО КАРТАМ:")
+            print("\nИНФОРМАЦИЯ ПО КАРТАМ:")
             for card in web_data['cards']:
                 print(f"\n  Карта ****{card['last_digits']}:")
                 print(f"    Расходы: {card['total_expenses']:,} руб.")
@@ -123,23 +87,28 @@ def main():
                 if card.get('top_transactions'):
                     print("    Топ-5 транзакций:")
                     for i, trans in enumerate(card['top_transactions'][:5], 1):
-                        print(f"      {i}. {trans['date']} - {trans['description']}: {trans['amount']:,} руб. ({trans['category']})")
+                        print(
+                            f"      {i}. {trans['date']} - {trans['description']}: {trans['amount']:,} руб. ({trans['category']})")
+                else:
+                    print("    Топ-5 транзакций: нет данных")
+        else:
+            print("\n ИНФОРМАЦИЯ ПО КАРТАМ: данные не получены")
 
         # Курсы валют
         if 'currency_rates' in web_data and web_data['currency_rates']:
-            print("\n💵 КУРСЫ ВАЛЮТ:")
+            print("\nКУРСЫ ВАЛЮТ:")
             for rate in web_data['currency_rates']:
                 print(f"  {rate['currency']}: {rate['rate']:.4f} руб.")
         else:
-            print("\n💵 КУРСЫ ВАЛЮТ: данные не получены")
+            print("\nКУРСЫ ВАЛЮТ: данные не получены")
 
         # Цены акций
         if 'stock_prices' in web_data and web_data['stock_prices']:
-            print("\n📈 ЦЕНЫ АКЦИЙ:")
+            print("\nЦЕНЫ АКЦИЙ:")
             for stock in web_data['stock_prices']:
                 print(f"  {stock['stock']}: ${stock['price']:.2f}")
         else:
-            print("\n📈 ЦЕНЫ АКЦИЙ: данные не получены")
+            print("\nЦЕНЫ АКЦИЙ: данные не получены")
 
     except json.JSONDecodeError as e:
         print(f"Ошибка парсинга JSON: {e}")
