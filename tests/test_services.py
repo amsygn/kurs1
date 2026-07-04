@@ -173,5 +173,5 @@ class TestServices(unittest.TestCase):
             self.assertEqual(len(result), 1, f"Не найден номер: {phone}")
 
 
-if __name__ == '__main__':
-    unittest.main()
+# if __name__ == '__main__':
+#     unittest.main()

@@ -151,20 +151,16 @@ def get_card_data(transactions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     for trans in transactions:
         card_number = trans.get('Номер карты', '')
 
-        # ✅ Проверяем, что номер карты существует и не NaN
         if not card_number or pd.isna(card_number):
             continue
 
-        # ✅ Преобразуем в строку
         if isinstance(card_number, (int, float)):
-            # Проверяем, что это не NaN
             if pd.isna(card_number):
                 continue
             card_number = str(int(card_number))
         else:
             card_number = str(card_number)
 
-        # Убираем звездочку и пробелы
         clean_card = card_number.replace('*', '').replace(' ', '').strip()
         if not clean_card or len(clean_card) < 4:
             continue
@@ -182,7 +178,8 @@ def get_card_data(transactions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
                 }
 
             cards_data[clean_card]['total_expenses'] += abs_amount
-            cards_data[clean_card]['cashback'] = abs_amount // 100
+            # ✅ Исправлено: накапливаем кешбэк, а не присваиваем
+            cards_data[clean_card]['cashback'] += abs_amount // 100
             cards_data[clean_card]['transactions'].append({
                 'date': format_date(trans.get('Дата операции', ''), '%Y-%m-%d %H:%M:%S', '%d.%m.%Y'),
                 'amount': abs_amount,
