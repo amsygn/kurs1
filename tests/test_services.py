@@ -93,7 +93,9 @@ class TestServices(unittest.TestCase):
         """Тест простого поиска."""
         # Поиск по описанию
         result_json = simple_search(self.test_transactions, "кафе")
+        print(f"\nDEBUG simple_search('кафе'): {result_json[:200]}")
         result = json.loads(result_json)
+        print(f"DEBUG result: {result}")
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]['category'], 'Рестораны')
 
@@ -108,10 +110,27 @@ class TestServices(unittest.TestCase):
         result = json.loads(result_json)
         self.assertEqual(len(result), 0)
 
+    def test_simple_search_debug(self):
+        """Отладочный тест для проверки contains_string."""
+        # Проверяем, что contains_string работает
+        pred = contains_string('кафе')
+        result = pred(self.test_transactions[0])
+        print(f"\nDEBUG contains_string('кафе') on transaction[0]: {result}")
+        self.assertTrue(result)
+
+        # Проверяем фильтрацию
+        filtered = filter_transactions(self.test_transactions, contains_string('кафе'))
+        print(f"DEBUG filtered by 'кафе': {len(filtered)}")
+        self.assertEqual(len(filtered), 1)
+
     def test_search_by_phone(self):
         """Тест поиска по телефону."""
+        print(f"\nDEBUG test_search_by_phone")
+        print(f"Transactions: {self.test_transactions[0]['Описание']}")
+
         # Поиск всех телефонов
         result_json = search_by_phone(self.test_transactions)
+        print(f"DEBUG search_by_phone() result: {result_json[:200]}")
         result = json.loads(result_json)
         self.assertEqual(len(result), 1)
         self.assertIn('phone_found', result[0])
@@ -119,6 +138,7 @@ class TestServices(unittest.TestCase):
 
         # Поиск конкретного телефона
         result_json = search_by_phone(self.test_transactions, "+7 921 123-45-67")
+        print(f"DEBUG search_by_phone('+7 921 123-45-67') result: {result_json[:200]}")
         result = json.loads(result_json)
         self.assertEqual(len(result), 1)
 
@@ -130,6 +150,7 @@ class TestServices(unittest.TestCase):
     def test_search_transfers_to_individuals(self):
         """Тест поиска переводов физическим лицам."""
         result_json = search_transfers_to_individuals(self.test_transactions)
+        print(f"\nDEBUG search_transfers_to_individuals result: {result_json[:200]}")
         result = json.loads(result_json)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]['category'], 'Переводы')
@@ -147,6 +168,7 @@ class TestServices(unittest.TestCase):
 
         for phone in phones:
             result_json = search_by_phone(self.test_transactions, phone)
+            print(f"DEBUG search_by_phone('{phone}') length: {len(json.loads(result_json))}")
             result = json.loads(result_json)
             self.assertEqual(len(result), 1, f"Не найден номер: {phone}")
 
