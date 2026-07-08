@@ -7,8 +7,33 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.13"
+dotenv = "^0.9.9"
+python-dotenv = "^1.2.2"
+pandas = "^3.0.3"
+requests = "^2.34.2"
 
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.flake8]
+exclude = [
+    ".venv",
+    ".env",
+    ".git",
+    "__pycache__",
+    "venv",
+    "env",
+    "data",
+    "tests",
+    ".idea",
+    ".vscode",
+    "*.log",
+    "*.json",
+    "*.xlsx",
+    ".env_template",
+    "user_settings.json"
+]
+max-line-length = 100
+ignore = ["E203", "W503", "E501"]
