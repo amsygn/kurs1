@@ -10,7 +10,7 @@ from src.storage.txt_storage import TXTStorage
 def display_aeroplane(aeroplane: Aeroplane, index: int = None) -> None:
     """Вывод информации о самолете в консоль."""
     prefix = f"{index + 1}. " if index is not None else ""
-    print(f"{prefix}✈️  {aeroplane.callsign or 'N/A'}")
+    print(f"{prefix} {aeroplane.callsign or 'N/A'}")
     print(f"   ICAO24: {aeroplane.icao24}")
     print(f"   Страна: {aeroplane.country}")
     print(
@@ -27,7 +27,7 @@ def display_aeroplane(aeroplane: Aeroplane, index: int = None) -> None:
 def display_aeroplanes(aeroplanes: List[Aeroplane], title: str = "Самолеты") -> None:
     """Вывод списка самолетов в консоль."""
     if not aeroplanes:
-        print(f"ℹ️  {title}: самолеты не найдены")
+        print(f"{title}: самолеты не найдены")
         return
 
     print(f"\n{'=' * 60}")
