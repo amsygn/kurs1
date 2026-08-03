@@ -19,14 +19,14 @@ class JSONStorage(BaseStorage):
         directory = os.path.dirname(self.file_path)
         if directory and not os.path.exists(directory):
             os.makedirs(directory)
-            print(f"📁 Создана директория: {directory}")
+            print(f"Создана директория: {directory}")
 
     def _ensure_file_exists(self) -> None:
         """Создание пустого JSON-файла, если он не существует."""
         if not os.path.exists(self.file_path):
             with open(self.file_path, 'w', encoding='utf-8') as f:
                 json.dump([], f, ensure_ascii=False, indent=2)
-            print(f"📄 Создан файл: {self.file_path}")
+            print(f"Создан файл: {self.file_path}")
 
     def _load_data(self) -> List[Dict[str, Any]]:
         """Загрузка данных из JSON-файла."""
@@ -89,7 +89,7 @@ class JSONStorage(BaseStorage):
                 added_count += 1
 
         self._save_data(data)
-        print(f"📊 Добавлено {added_count} новых записей, всего {len(data)} записей")
+        print(f"Добавлено {added_count} новых записей, всего {len(data)} записей")
 
     def get_aeroplane(self, icao24: str) -> Optional[Aeroplane]:
         """Получение самолета по ICAO24."""

@@ -159,16 +159,16 @@ def user_interaction() -> None:
                 display_aeroplanes(aeroplanes, f"Самолеты в воздушном пространстве '{country}'")
 
                 # Сохраняем данные
-                save_choice = input("Сохранить данные в файл? (y/n): ").strip().lower()
-                if save_choice == 'y':
+                save_choice = input("Сохранить данные в файл? Да (1) / Нет (0): ").strip().lower()
+                if save_choice == '1':
                     json_storage.add_aeroplanes(aeroplanes)
                     print("Данные сохранены в JSON-файл")
 
         elif choice == '2':
             try:
-                top_n = int(input("Введите количество самолетов для топа (N): ").strip())
+                top_n = int(input("Введите количество самолетов для топа: ").strip())
                 if top_n <= 0:
-                    print("N должно быть положительным числом")
+                    print("Это должно быть положительное число")
                     continue
             except ValueError:
                 print("Ошибка: введите целое число")
@@ -183,7 +183,7 @@ def user_interaction() -> None:
             display_aeroplanes(top_aeroplanes, f"Топ {top_n} самолетов по высоте")
 
         elif choice == '3':
-            countries_input = input("Введите страны регистрации для фильтрации (через пробел): ").strip()
+            countries_input = input("Введите страны регистрации для фильтрации (через пробел на английском языке): ").strip()
             if not countries_input:
                 print("Ошибка: список стран не может быть пустым")
                 continue
@@ -238,8 +238,8 @@ def user_interaction() -> None:
                 display_aeroplanes(all_aeroplanes, "Все сохраненные самолеты")
 
         elif choice == '7':
-            confirm = input("Вы уверены, что хотите очистить хранилище? (y/n): ").strip().lower()
-            if confirm == 'y':
+            confirm = input("Вы уверены, что хотите очистить хранилище? Да (1) / Нет (0): ").strip().lower()
+            if confirm == '1':
                 json_storage.clear_all()
                 print("Хранилище очищено")
 
