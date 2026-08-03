@@ -122,7 +122,7 @@ class JSONStorage(BaseStorage):
                         item['time_position'] == aeroplane.time_position)]
         if len(data) < initial_count:
             self._save_data(data)
-            print(f"Запись удалена")
+            print("Запись удалена")
         else:
             print("Запись не найдена")
 
