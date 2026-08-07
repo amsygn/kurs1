@@ -1,237 +1,141 @@
-import pytest
+# src/storage/csv_storage.py
+import csv
 import os
-import tempfile
+from typing import List, Optional, Dict, Any
 from src.planes_models import Aeroplane
-from src.storage.csv_storage import CSVStorage
+from src.storage.base_storage import BaseStorage
 
 
-class TestCSVStorage:
-    """Тесты для класса CSVStorage."""
+class CSVStorage(BaseStorage):
+    """Класс для работы с CSV-файлом."""
 
-    def create_test_aeroplane(self, icao24="4b1812", callsign="SWR438A",
-                              country="Switzerland", time_position=1766166618):
-        """Создание тестового самолета."""
+    def __init__(self, file_path: str = 'data/aeroplanes.csv'):
+        self.file_path = file_path
+        self.fields = ['icao24', 'callsign', 'country', 'time_position', 'last_contact',
+                       'longitude', 'latitude', 'baro_altitude', 'geo_altitude', 'on_ground',
+                       'velocity', 'true_track', 'vertical_rate', 'squawk']
+        self._ensure_directory_exists()
+        self._ensure_file_exists()  # Добавляем создание файла
+
+    def _ensure_directory_exists(self) -> None:
+        directory = os.path.dirname(self.file_path)
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory)
+
+    def _ensure_file_exists(self) -> None:
+        """Создание пустого CSV-файла с заголовками, если он не существует."""
+        if not os.path.exists(self.file_path):
+            with open(self.file_path, 'w', encoding='utf-8', newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=self.fields)
+                writer.writeheader()
+
+    def _load_data(self) -> List[Dict[str, Any]]:
+        if not os.path.exists(self.file_path):
+            return []
+
+        try:
+            with open(self.file_path, 'r', encoding='utf-8', newline='') as f:
+                reader = csv.DictReader(f)
+                return list(reader)
+        except (csv.Error, FileNotFoundError):
+            return []
+
+    def _save_data(self, data: List[Dict[str, Any]]) -> None:
+        with open(self.file_path, 'w', encoding='utf-8', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=self.fields)
+            writer.writeheader()
+            writer.writerows(data)
+
+    def add_aeroplane(self, aeroplane: Aeroplane) -> None:
+        """Добавление самолета в CSV-файл."""
+        data = self._load_data()
+        aeroplane_dict = aeroplane.to_dict()
+
+        # Преобразуем булевы значения в строки
+        aeroplane_dict['on_ground'] = str(aeroplane_dict['on_ground'])
+
+        # Преобразуем None в пустые строки для CSV
+        for key, value in aeroplane_dict.items():
+            if value is None:
+                aeroplane_dict[key] = ''
+
+        for i, item in enumerate(data):
+            if item['icao24'] == aeroplane.icao24 and item['time_position'] == str(aeroplane.time_position):
+                data[i] = aeroplane_dict
+                self._save_data(data)
+                return
+
+        data.append(aeroplane_dict)
+        self._save_data(data)
+
+    def add_aeroplanes(self, aeroplanes: List[Aeroplane]) -> None:
+        """Добавление нескольких самолетов."""
+        for aeroplane in aeroplanes:
+            self.add_aeroplane(aeroplane)
+
+    def get_aeroplane(self, icao24: str) -> Optional[Aeroplane]:
+        """Получение самолета по ICAO24."""
+        data = self._load_data()
+        for item in data:
+            if item['icao24'] == icao24:
+                return self._dict_to_aeroplane(item)
+        return None
+
+    def get_aeroplanes_by_country(self, country: str) -> List[Aeroplane]:
+        """Получение самолетов по стране регистрации."""
+        data = self._load_data()
+        result = []
+        for item in data:
+            if item['country'].lower() == country.lower():
+                result.append(self._dict_to_aeroplane(item))
+        return result
+
+    def get_all_aeroplanes(self) -> List[Aeroplane]:
+        """Получение всех самолетов."""
+        data = self._load_data()
+        return [self._dict_to_aeroplane(item) for item in data]
+
+    def delete_aeroplane(self, aeroplane: Aeroplane) -> None:
+        """Удаление самолета."""
+        data = self._load_data()
+        data = [item for item in data
+                if not (item['icao24'] == aeroplane.icao24 and
+                        item['time_position'] == str(aeroplane.time_position))]
+        self._save_data(data)
+
+    def delete_aeroplanes_by_country(self, country: str) -> int:
+        """Удаление всех самолетов по стране."""
+        data = self._load_data()
+        initial_count = len(data)
+        data = [item for item in data if item['country'].lower() != country.lower()]
+        self._save_data(data)
+        return initial_count - len(data)
+
+    def clear_all(self) -> None:
+        """Очистка хранилища."""
+        self._save_data([])
+
+    def _dict_to_aeroplane(self, data: Dict[str, Any]) -> Aeroplane:
+        """Преобразование словаря в объект Aeroplane."""
+        # Преобразуем пустые строки обратно в None
+        def convert_value(value):
+            if value == '':
+                return None
+            return value
+
         return Aeroplane(
-            icao24=icao24,
-            callsign=callsign,
-            country=country,
-            time_position=time_position,
-            last_contact=time_position,
-            longitude=-0.0168,
-            latitude=51.0888,
-            baro_altitude=4267.2,
-            on_ground=False,
-            velocity=189.7,
-            true_track=129.39,
-            vertical_rate=14.63,
-            geo_altitude=4282.44,
-            squawk="2061"
+            icao24=data['icao24'],
+            callsign=convert_value(data.get('callsign')),
+            country=data['country'],
+            time_position=int(data['time_position']),
+            last_contact=int(data['last_contact']),
+            longitude=float(data['longitude']) if data.get('longitude') and data['longitude'] != '' else None,
+            latitude=float(data['latitude']) if data.get('latitude') and data['latitude'] != '' else None,
+            baro_altitude=float(data['baro_altitude']) if data.get('baro_altitude') and data['baro_altitude'] != '' else None,
+            on_ground=data['on_ground'].lower() == 'true',
+            velocity=float(data['velocity']) if data.get('velocity') and data['velocity'] != '' else None,
+            true_track=float(data['true_track']) if data.get('true_track') and data['true_track'] != '' else None,
+            vertical_rate=float(data['vertical_rate']) if data.get('vertical_rate') and data['vertical_rate'] != '' else None,
+            geo_altitude=float(data['geo_altitude']) if data.get('geo_altitude') and data['geo_altitude'] != '' else None,
+            squawk=convert_value(data.get('squawk'))
         )
-
-    def test_csv_storage_creation(self):
-        """Тест создания CSV хранилища."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            file_path = os.path.join(tmpdir, "test.csv")
-            storage = CSVStorage(file_path)
-            assert os.path.exists(file_path)
-
-            # Проверяем, что файл создан с заголовками
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-                assert 'icao24' in content
-                assert 'callsign' in content
-                assert 'country' in content
-
-    def test_csv_storage_add_aeroplane(self):
-        """Тест добавления самолета в CSV хранилище."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            file_path = os.path.join(tmpdir, "test.csv")
-            storage = CSVStorage(file_path)
-
-            aeroplane = self.create_test_aeroplane()
-            storage.add_aeroplane(aeroplane)
-
-            stored = storage.get_aeroplane("4b1812")
-            assert stored is not None
-            assert stored.icao24 == "4b1812"
-            assert stored.callsign == "SWR438A"
-
-    def test_csv_storage_add_aeroplane_with_none_values(self):
-        """Тест добавления самолета с None значениями."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            file_path = os.path.join(tmpdir, "test.csv")
-            storage = CSVStorage(file_path)
-
-            aeroplane = Aeroplane(
-                icao24="4b1812",
-                callsign=None,
-                country="Switzerland",
-                time_position=1766166618,
-                last_contact=1766166618,
-                longitude=None,
-                latitude=None,
-                baro_altitude=None,
-                on_ground=True,
-                velocity=None,
-                true_track=None,
-                vertical_rate=None,
-                geo_altitude=None,
-                squawk=None
-            )
-            storage.add_aeroplane(aeroplane)
-
-            stored = storage.get_aeroplane("4b1812")
-            assert stored is not None
-            assert stored.callsign is None
-            assert stored.longitude is None
-            assert stored.on_ground is True
-
-    def test_csv_storage_update_existing(self):
-        """Тест обновления существующей записи в CSV."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            file_path = os.path.join(tmpdir, "test.csv")
-            storage = CSVStorage(file_path)
-
-            aeroplane = self.create_test_aeroplane()
-            storage.add_aeroplane(aeroplane)
-
-            updated = Aeroplane(
-                icao24="4b1812",
-                callsign="UPDATED",
-                country="Switzerland",
-                time_position=1766166618,
-                last_contact=1766166618,
-                longitude=-1.0,
-                latitude=52.0,
-                baro_altitude=5000.0,
-                on_ground=False,
-                velocity=200.0,
-                true_track=130.0,
-                vertical_rate=15.0,
-                geo_altitude=5000.0,
-                squawk="2061"
-            )
-            storage.add_aeroplane(updated)
-
-            stored = storage.get_aeroplane("4b1812")
-            assert stored.callsign == "UPDATED"
-            assert stored.longitude == -1.0
-            assert stored.velocity == 200.0
-
-    def test_csv_storage_get_aeroplane_not_found(self):
-        """Тест получения несуществующего самолета."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            file_path = os.path.join(tmpdir, "test.csv")
-            storage = CSVStorage(file_path)
-
-            result = storage.get_aeroplane("nonexistent")
-            assert result is None
-
-    def test_csv_storage_add_aeroplanes_empty_list(self):
-        """Тест добавления пустого списка самолетов."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            file_path = os.path.join(tmpdir, "test.csv")
-            storage = CSVStorage(file_path)
-
-            storage.add_aeroplanes([])
-            all_planes = storage.get_all_aeroplanes()
-            assert len(all_planes) == 0
-
-    def test_csv_storage_load_empty_file(self):
-        """Тест загрузки из пустого файла."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            file_path = os.path.join(tmpdir, "empty.csv")
-            # Создаем пустой файл
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write('')
-
-            storage = CSVStorage(file_path)
-            data = storage._load_data()
-            assert data == []
-
-    def test_csv_storage_load_corrupted_file(self):
-        """Тест загрузки поврежденного файла."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            file_path = os.path.join(tmpdir, "corrupted.csv")
-            # Создаем поврежденный файл
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write('invalid,csv,data\n')
-
-            storage = CSVStorage(file_path)
-            data = storage._load_data()
-            # Должен вернуть пустой список при ошибке
-            assert data == []
-
-    def test_csv_storage_delete_aeroplane_not_found(self):
-        """Тест удаления несуществующего самолета."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            file_path = os.path.join(tmpdir, "test.csv")
-            storage = CSVStorage(file_path)
-
-            aeroplane = self.create_test_aeroplane()
-            storage.delete_aeroplane(aeroplane)  # Не должно вызвать ошибку
-
-            assert len(storage.get_all_aeroplanes()) == 0
-
-    def test_csv_storage_delete_aeroplanes_by_country(self):
-        """Тест удаления самолетов по стране."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            file_path = os.path.join(tmpdir, "test.csv")
-            storage = CSVStorage(file_path)
-
-            a1 = self.create_test_aeroplane("4b1812", "SWR438A", "Switzerland")
-            a2 = self.create_test_aeroplane("4b1813", "LUFTHANSA", "Germany", 1766166619)
-
-            storage.add_aeroplanes([a1, a2])
-
-            deleted = storage.delete_aeroplanes_by_country("Switzerland")
-            assert deleted == 1
-
-            all_planes = storage.get_all_aeroplanes()
-            assert len(all_planes) == 1
-            assert all_planes[0].icao24 == "4b1813"
-
-    def test_csv_storage_delete_aeroplanes_by_country_not_found(self):
-        """Тест удаления самолетов по несуществующей стране."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            file_path = os.path.join(tmpdir, "test.csv")
-            storage = CSVStorage(file_path)
-
-            aeroplane = self.create_test_aeroplane()
-            storage.add_aeroplane(aeroplane)
-
-            deleted = storage.delete_aeroplanes_by_country("NonExistent")
-            assert deleted == 0
-
-            all_planes = storage.get_all_aeroplanes()
-            assert len(all_planes) == 1
-
-    def test_csv_storage_clear_all(self):
-        """Тест очистки CSV хранилища."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            file_path = os.path.join(tmpdir, "test.csv")
-            storage = CSVStorage(file_path)
-
-            aeroplane = self.create_test_aeroplane()
-            storage.add_aeroplane(aeroplane)
-
-            assert len(storage.get_all_aeroplanes()) == 1
-
-            storage.clear_all()
-            assert len(storage.get_all_aeroplanes()) == 0
-
-    def test_csv_storage_get_aeroplanes_by_country_case_insensitive(self):
-        """Тест получения самолетов по стране (регистронезависимо)."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            file_path = os.path.join(tmpdir, "test.csv")
-            storage = CSVStorage(file_path)
-
-            aeroplane = self.create_test_aeroplane("4b1812", "SWR438A", "Switzerland")
-            storage.add_aeroplane(aeroplane)
-
-            # Разные варианты написания
-            result1 = storage.get_aeroplanes_by_country("switzerland")
-            result2 = storage.get_aeroplanes_by_country("SWITZERLAND")
-
-            assert len(result1) == 1
-            assert len(result2) == 1
