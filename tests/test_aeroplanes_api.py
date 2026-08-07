@@ -1,4 +1,5 @@
 from unittest.mock import patch, MagicMock
+from requests import RequestException
 from src.api.aeroplanes_api import AeroplanesAPI
 
 
@@ -47,7 +48,8 @@ class TestAeroplanesAPI:
     @patch('src.api.aeroplanes_api.get')
     def test_get_country_coordinates_request_error(self, mock_get):
         """Тест ошибки запроса при получении координат."""
-        mock_get.side_effect = Exception("Network error")
+        # Используем RequestException вместо Exception
+        mock_get.side_effect = RequestException("Network error")
 
         api = AeroplanesAPI()
         result = api.get_country_coordinates("Canada")
@@ -126,7 +128,7 @@ class TestAeroplanesAPI:
         mock_response.json.return_value = [
             {
                 "name": "Canada",
-                "boundingbox": []
+                "boundingbox": []  # Пустой boundingbox
             }
         ]
         mock_response.raise_for_status.return_value = None
@@ -150,8 +152,8 @@ class TestAeroplanesAPI:
         ]
         coords_response.raise_for_status.return_value = None
 
-        # Мок для ошибки OpenSky
-        mock_get.side_effect = [coords_response, Exception("OpenSky API error")]
+        # Мок для ошибки OpenSky - используем RequestException
+        mock_get.side_effect = [coords_response, RequestException("OpenSky API error")]
 
         api = AeroplanesAPI()
         result = api.get_aeroplanes_by_country("Canada")
@@ -174,9 +176,32 @@ class TestAeroplanesAPI:
     @patch('src.api.aeroplanes_api.get')
     def test_get_data_error(self, mock_get):
         """Тест ошибки в общем методе получения данных."""
-        mock_get.side_effect = Exception("Request failed")
+        # Используем RequestException вместо Exception
+        mock_get.side_effect = RequestException("Request failed")
 
         api = AeroplanesAPI()
         result = api.get_data({"param": "value"})
+
+        assert result is None
+
+    @patch('src.api.aeroplanes_api.get')
+    def test_get_aeroplanes_by_country_coords_api_error(self, mock_get):
+        """Тест ошибки при получении координат через API."""
+        mock_get.side_effect = RequestException("Coordinates API error")
+
+        api = AeroplanesAPI()
+        result = api.get_aeroplanes_by_country("Canada")
+
+        assert result is None
+
+    @patch('src.api.aeroplanes_api.get')
+    def test_get_country_coordinates_http_error(self, mock_get):
+        """Тест HTTP ошибки при получении координат."""
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = RequestException("HTTP 404")
+        mock_get.return_value = mock_response
+
+        api = AeroplanesAPI()
+        result = api.get_country_coordinates("Canada")
 
         assert result is None
