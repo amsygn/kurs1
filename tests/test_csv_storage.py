@@ -115,11 +115,14 @@ class CSVStorage(BaseStorage):
         """Очистка хранилища."""
         self._save_data([])
 
+    # src/storage/csv_storage.py - исправить _dict_to_aeroplane
+
     def _dict_to_aeroplane(self, data: Dict[str, Any]) -> Aeroplane:
         """Преобразование словаря в объект Aeroplane."""
+
         # Преобразуем пустые строки обратно в None
         def convert_value(value):
-            if value == '':
+            if value == '' or value is None:
                 return None
             return value
 
@@ -131,11 +134,14 @@ class CSVStorage(BaseStorage):
             last_contact=int(data['last_contact']),
             longitude=float(data['longitude']) if data.get('longitude') and data['longitude'] != '' else None,
             latitude=float(data['latitude']) if data.get('latitude') and data['latitude'] != '' else None,
-            baro_altitude=float(data['baro_altitude']) if data.get('baro_altitude') and data['baro_altitude'] != '' else None,
+            baro_altitude=float(data['baro_altitude']) if data.get('baro_altitude') and data[
+                'baro_altitude'] != '' else None,
             on_ground=data['on_ground'].lower() == 'true',
             velocity=float(data['velocity']) if data.get('velocity') and data['velocity'] != '' else None,
             true_track=float(data['true_track']) if data.get('true_track') and data['true_track'] != '' else None,
-            vertical_rate=float(data['vertical_rate']) if data.get('vertical_rate') and data['vertical_rate'] != '' else None,
-            geo_altitude=float(data['geo_altitude']) if data.get('geo_altitude') and data['geo_altitude'] != '' else None,
+            vertical_rate=float(data['vertical_rate']) if data.get('vertical_rate') and data[
+                'vertical_rate'] != '' else None,
+            geo_altitude=float(data['geo_altitude']) if data.get('geo_altitude') and data[
+                'geo_altitude'] != '' else None,
             squawk=convert_value(data.get('squawk'))
         )
