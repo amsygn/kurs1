@@ -1,10 +1,7 @@
-# src/utils/user_interaction.py
 from typing import List, Optional, Tuple
 from src.planes_models import Aeroplane
 from src.api.aeroplanes_api import AeroplanesAPI
 from src.storage.json_storage import JSONStorage
-from src.storage.csv_storage import CSVStorage
-from src.storage.txt_storage import TXTStorage
 
 
 def display_aeroplane(aeroplane: Aeroplane, index: int = None) -> None:
