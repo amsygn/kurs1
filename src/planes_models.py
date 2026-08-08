@@ -87,31 +87,51 @@ class Aeroplane:
         """Проверяет, активен ли самолет (не на земле и имеет координаты)."""
         return not self.on_ground and self.latitude is not None and self.longitude is not None
 
-    def __lt__(self, other: 'Aeroplane') -> bool:
-        """Сравнение по скорости (меньше)."""
-        if self.velocity is None or other.velocity is None:
-            return False
-        return self.velocity < other.velocity
+    def compare_by_velocity(self, other: "Aeroplane") -> int:
+        """
+        Сравнение по скорости.
+        -1 если self медленнее, 0 если равны, 1 если быстрее.
+        None считаем меньше любого числа.
+        """
+        if self.velocity is None and other.velocity is None:
+            return 0
+        if self.velocity is None:
+            return -1
+        if other.velocity is None:
+            return 1
+        return (self.velocity > other.velocity) - (self.velocity < other.velocity)
 
-    def __gt__(self, other: 'Aeroplane') -> bool:
-        """Сравнение по скорости (больше)."""
-        if self.velocity is None or other.velocity is None:
-            return False
-        return self.velocity > other.velocity
+    def compare_by_altitude(self, other: "Aeroplane") -> int:
+        """
+        Сравнение по высоте (baro_altitude).
+        -1 если self ниже, 0 если равны, 1 если выше.
+        None считаем меньше любого числа.
+        """
+        if self.baro_altitude is None and other.baro_altitude is None:
+            return 0
+        if self.baro_altitude is None:
+            return -1
+        if other.baro_altitude is None:
+            return 1
+        return (self.baro_altitude > other.baro_altitude) - (self.baro_altitude < other.baro_altitude)
 
-    def __le__(self, other: 'Aeroplane') -> bool:
-        """Сравнение по скорости (меньше или равно)."""
-        if self.velocity is None or other.velocity is None:
-            return False
-        return self.velocity <= other.velocity
+    def __lt__(self, other: "Aeroplane") -> bool:
+        """Сравнение по скорости (меньше). Использует compare_by_velocity."""
+        return self.compare_by_velocity(other) < 0
 
-    def __ge__(self, other: 'Aeroplane') -> bool:
-        """Сравнение по скорости (больше или равно)."""
-        if self.velocity is None or other.velocity is None:
-            return False
-        return self.velocity >= other.velocity
+    def __gt__(self, other: "Aeroplane") -> bool:
+        """Сравнение по скорости (больше). Использует compare_by_velocity."""
+        return self.compare_by_velocity(other) > 0
 
-    def __eq__(self, other: 'Aeroplane') -> bool:
+    def __le__(self, other: "Aeroplane") -> bool:
+        """Сравнение по скорости (меньше или равно). Использует compare_by_velocity."""
+        return self.compare_by_velocity(other) <= 0
+
+    def __ge__(self, other: "Aeroplane") -> bool:
+        """Сравнение по скорости (больше или равно). Использует compare_by_velocity."""
+        return self.compare_by_velocity(other) >= 0
+
+    def __eq__(self, other: "Aeroplane") -> bool:
         """Сравнение по ICAO24 и времени."""
         if not isinstance(other, Aeroplane):
             return False
@@ -141,7 +161,7 @@ class Aeroplane:
         }
 
     @classmethod
-    def from_state(cls, state: List[Any]) -> 'Aeroplane':
+    def from_state(cls, state: List[Any]) -> "Aeroplane":
         """Создание объекта из массива состояния OpenSky."""
         return cls(
             icao24=state[0],
@@ -161,7 +181,7 @@ class Aeroplane:
         )
 
     @classmethod
-    def cast_to_object_list(cls, data: Dict[str, Any]) -> List['Aeroplane']:
+    def cast_to_object_list(cls, data: Dict[str, Any]) -> List["Aeroplane"]:
         """Преобразование ответа API в список объектов Aeroplane."""
         if not data or 'states' not in data:
             return []
