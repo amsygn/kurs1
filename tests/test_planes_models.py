@@ -1,4 +1,3 @@
-# tests/test_planes_models.py
 import pytest
 from datetime import datetime
 from src.planes_models import Aeroplane
@@ -308,9 +307,175 @@ class TestAeroplane:
             squawk="0001"
         )
 
-        # Сравнение с None должно возвращать False
+        # None считается меньше любого числа
+        assert a1.compare_by_velocity(a2) == -1
+        assert a2.compare_by_velocity(a1) == 1
+        # Операторы сравнения должны работать корректно
         assert not (a1 > a2)
-        assert not (a1 < a2)
+        assert a1 < a2
+
+    def test_compare_by_altitude_and_velocity(self):
+        """Тест сравнения по высоте и скорости."""
+        low = Aeroplane(
+            icao24="aaaaaa",
+            callsign="A",
+            country="Test",
+            time_position=1,
+            last_contact=1,
+            longitude=0,
+            latitude=0,
+            baro_altitude=1000,
+            on_ground=False,
+            velocity=100,
+            true_track=0,
+            vertical_rate=0,
+            geo_altitude=1000,
+            squawk="0000",
+        )
+        high = Aeroplane(
+            icao24="bbbbbb",
+            callsign="B",
+            country="Test",
+            time_position=2,
+            last_contact=2,
+            longitude=0,
+            latitude=0,
+            baro_altitude=5000,
+            on_ground=False,
+            velocity=200,
+            true_track=0,
+            vertical_rate=0,
+            geo_altitude=5000,
+            squawk="0001",
+        )
+
+        # Проверка сравнения по высоте
+        assert low.compare_by_altitude(high) == -1
+        assert high.compare_by_altitude(low) == 1
+        assert low.compare_by_altitude(low) == 0
+        assert high.compare_by_altitude(high) == 0
+
+        # Проверка сравнения по скорости
+        assert low.compare_by_velocity(high) == -1
+        assert high.compare_by_velocity(low) == 1
+        assert low.compare_by_velocity(low) == 0
+        assert high.compare_by_velocity(high) == 0
+
+    def test_compare_by_altitude_with_none(self):
+        """Тест сравнения по высоте с None значениями."""
+        a1 = Aeroplane(
+            icao24="aaaaaa",
+            callsign="A",
+            country="Test",
+            time_position=1,
+            last_contact=1,
+            longitude=0,
+            latitude=0,
+            baro_altitude=None,
+            on_ground=False,
+            velocity=100,
+            true_track=0,
+            vertical_rate=0,
+            geo_altitude=None,
+            squawk="0000"
+        )
+        a2 = Aeroplane(
+            icao24="bbbbbb",
+            callsign="B",
+            country="Test",
+            time_position=2,
+            last_contact=2,
+            longitude=0,
+            latitude=0,
+            baro_altitude=5000,
+            on_ground=False,
+            velocity=200,
+            true_track=0,
+            vertical_rate=0,
+            geo_altitude=5000,
+            squawk="0001"
+        )
+
+        # None считается меньше любого числа
+        assert a1.compare_by_altitude(a2) == -1
+        assert a2.compare_by_altitude(a1) == 1
+
+        # Оба None - равны
+        a3 = Aeroplane(
+            icao24="cccccc",
+            callsign="C",
+            country="Test",
+            time_position=3,
+            last_contact=3,
+            longitude=0,
+            latitude=0,
+            baro_altitude=None,
+            on_ground=False,
+            velocity=150,
+            true_track=0,
+            vertical_rate=0,
+            geo_altitude=None,
+            squawk="0002"
+        )
+        assert a1.compare_by_altitude(a3) == 0
+
+    def test_compare_by_velocity_with_none(self):
+        """Тест сравнения по скорости с None значениями."""
+        a1 = Aeroplane(
+            icao24="aaaaaa",
+            callsign="A",
+            country="Test",
+            time_position=1,
+            last_contact=1,
+            longitude=0,
+            latitude=0,
+            baro_altitude=1000,
+            on_ground=False,
+            velocity=None,
+            true_track=0,
+            vertical_rate=0,
+            geo_altitude=1000,
+            squawk="0000"
+        )
+        a2 = Aeroplane(
+            icao24="bbbbbb",
+            callsign="B",
+            country="Test",
+            time_position=2,
+            last_contact=2,
+            longitude=0,
+            latitude=0,
+            baro_altitude=5000,
+            on_ground=False,
+            velocity=200,
+            true_track=0,
+            vertical_rate=0,
+            geo_altitude=5000,
+            squawk="0001"
+        )
+
+        # None считается меньше любого числа
+        assert a1.compare_by_velocity(a2) == -1
+        assert a2.compare_by_velocity(a1) == 1
+
+        # Оба None - равны
+        a3 = Aeroplane(
+            icao24="cccccc",
+            callsign="C",
+            country="Test",
+            time_position=3,
+            last_contact=3,
+            longitude=0,
+            latitude=0,
+            baro_altitude=3000,
+            on_ground=False,
+            velocity=None,
+            true_track=0,
+            vertical_rate=0,
+            geo_altitude=3000,
+            squawk="0002"
+        )
+        assert a1.compare_by_velocity(a3) == 0
 
     def test_aeroplane_equality(self):
         """Тест равенства самолетов."""
