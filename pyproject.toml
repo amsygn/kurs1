@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "kurs1"
+name = "kurs2"
 version = "0.1.0"
 description = ""
 authors = ["Anton Mosyagin <mosyagin@yandex.ru>"]
